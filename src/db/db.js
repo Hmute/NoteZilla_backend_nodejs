@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 const DB_FILE = process.env.DB_FILE || './data/app.db';
@@ -39,6 +40,7 @@ async function migrate() {
       email     TEXT NOT NULL UNIQUE,
       passwordHash TEXT NOT NULL,
       role      TEXT NOT NULL DEFAULT 'user',
+      apiCalls INTEGER NOT NULL DEFAULT 0,
       createdAt TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
@@ -57,6 +59,18 @@ async function migrate() {
     );
   `);
   await run(`CREATE INDEX IF NOT EXISTS idx_videos_userId ON Videos(userId);`);
+
+  // Seed admin user if it doesn't exist
+  const adminUser = await get(`SELECT id FROM Users WHERE email = ?`, ['admin@admin.admin']);
+  if (!adminUser) {
+    console.log('Creating admin user...');
+    const adminPasswordHash = await bcrypt.hash('admin', 10);
+    await run(`
+      INSERT INTO Users (firstName, lastName, email, passwordHash, role, apiCalls)
+      VALUES (?, ?, ?, ?, ?, 0)
+    `, ['admin', 'admin', 'admin@admin.admin', adminPasswordHash, 'admin']);
+    console.log('Admin user created successfully!');
+  }
 }
 
 module.exports = { db, run, get, all, migrate };

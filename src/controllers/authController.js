@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
+const User = require('../models/User');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'devsecret';
 
@@ -29,12 +29,22 @@ const register = async (req, res, next) => {
 
     const user = await User.findById(result.lastID);
 
+    // Generate token for auto-login
+    const token = jwt.sign(
+      { sub: user.id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
     res.status(201).json({
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      },
     });
   } catch (err) {
     next(err);
