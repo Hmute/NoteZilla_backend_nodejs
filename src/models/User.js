@@ -1,4 +1,4 @@
-const { run, get } = require('../db/db');
+const { run, get } = require("../db/db");
 
 const User = {
   findByEmail(email) {
@@ -9,7 +9,7 @@ const User = {
     return get(`SELECT * FROM Users WHERE id = ?`, [id]);
   },
 
-  async create({ firstName, lastName, email, passwordHash, role = 'user' }) {
+  async create({ firstName, lastName, email, passwordHash, role = "user" }) {
     return run(
       `INSERT INTO Users (firstName, lastName, email, passwordHash, role, apiCalls)
        VALUES (?, ?, ?, ?, ?, 0)`,
@@ -18,10 +18,22 @@ const User = {
   },
 
   async incrementApiCalls(userId) {
-    return run(
-      `UPDATE Users SET apiCalls = apiCalls + 1 WHERE id = ?`,
-      [userId]
-    );
+    return run(`UPDATE Users SET apiCalls = apiCalls + 1 WHERE id = ?`, [
+      userId,
+    ]);
+  },
+
+  //Checks if user has calls remaining
+  async hasApiCallsRemaining(userId, limit = 20) {
+    const user = await get(`SELECT apiCalls FROM Users WHERE id = ?`, [userId]);
+    if (!user) return false;
+    return user.apiCalls < limit;
+  },
+
+  //Gets current API call count
+  async getApiCallsCount(userId) {
+    const user = await get(`SELECT apiCalls FROM Users WHERE id = ?`, [userId]);
+    return user ? user.apiCalls : null;
   },
 };
 
