@@ -1,16 +1,10 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
-const User = require('../models/User');
+const { requireAuth } = require("../middleware/auth");
+const { apiUsage } = require("../middleware/apiUsage");
+const { upload } = require("../middleware/upload");
+const { uploadVideo } = require("../controllers/videoController");
 
-// Simple upload route that just increments API calls
-router.post('/upload', requireAuth, async (req, res) => {
-  try {
-    await User.incrementApiCalls(req.user.id);
-    res.json({ message: 'Upload successful, API call tracked' });
-  } catch (error) {
-    res.status(500).json({ error: 'Upload failed' });
-  }
-});
+router.post("/upload", requireAuth, apiUsage, upload.single("file"), uploadVideo);
 
 module.exports = router;
